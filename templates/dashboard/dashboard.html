@@ -1,22 +1,687 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard — Vantage{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ══════════════════════════════
+     STATS ROW
+  ══════════════════════════════ */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-bottom: 48px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .dash-stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 32px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .dash-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .dash-stat:hover {
+    transform: translateY(-4px);
+    border-color: var(--rust);
+    box-shadow: 0 14px 40px rgba(26,22,18,0.1);
+  }
+
+  .dash-stat:hover::before { transform: scaleX(1); }
+
+  .dash-stat-icon {
+    width: 44px; height: 44px;
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    transition: background 0.2s;
+  }
+
+  .dash-stat:hover .dash-stat-icon { background: #FBF0EA; }
+
+  .dash-stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .dash-stat-value span { color: var(--rust); font-size: 36px; }
+
+  .dash-stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .dash-stat-sub {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════
+     SECTION TITLE
+  ══════════════════════════════ */
+  .dash-section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .dash-section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .dash-section-title em { font-style: italic; color: var(--rust); }
+
+  .dash-section-eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 6px;
+  }
+
+  .dash-see-all {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    padding-bottom: 1px;
+  }
+
+  .dash-see-all:hover { color: var(--rust); border-color: var(--rust); }
+
+  /* ══════════════════════════════
+     TEAMS GRID
+  ══════════════════════════════ */
+  .teams-section {
+    margin-bottom: 56px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2px;
+  }
+
+  .team-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 24px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .team-card::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--rust);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.3s ease;
+  }
+
+  .team-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--rust);
+    box-shadow: 0 10px 30px rgba(26,22,18,0.09);
+  }
+
+  .team-card:hover::after { transform: scaleY(1); }
+
+  .team-avatar {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: rgba(196,98,45,0.1);
+    border: 1px solid rgba(196,98,45,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--rust);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .team-card:hover .team-avatar { background: rgba(196,98,45,0.18); }
+
+  .team-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .team-meta {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--muted);
+  }
+
+  .team-arrow {
+    margin-top: auto;
+    font-size: 16px;
+    color: var(--line);
+    transition: color 0.2s, transform 0.2s;
+    align-self: flex-end;
+  }
+
+  .team-card:hover .team-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     PROJECTS GRID
+  ══════════════════════════════ */
+  .projects-section {
+    margin-bottom: 56px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2px;
+  }
+
+  .project-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 26px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .project-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--rust);
+    box-shadow: 0 14px 40px rgba(26,22,18,0.1);
+  }
+
+  .project-card:hover::before { transform: scaleX(1); }
+
+  .project-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .project-initial {
+    width: 42px; height: 42px;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--cream);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .project-card:hover .project-initial { background: var(--rust); }
+
+  .project-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+    flex: 1;
+  }
+
+  .project-team {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .project-team-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--rust);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  .project-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .project-arrow {
+    font-size: 14px;
+    color: var(--line);
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .project-card:hover .project-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     TASKS LIST
+  ══════════════════════════════ */
+  .tasks-section {
+    animation: fadeUp 0.5s ease 0.3s both;
+  }
+
+  .tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .task-row {
+    background: var(--card);
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 22px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s, border-color 0.18s, background 0.18s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .task-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--rust);
+    transform: scaleY(0);
+    transition: transform 0.25s ease;
+  }
+
+  .task-row:hover {
+    transform: translateX(4px);
+    border-color: var(--rust);
+    background: #FDFAF7;
+  }
+
+  .task-row:hover::before { transform: scaleY(1); }
+
+  .task-status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .task-title {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .task-title.done {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .task-project {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .task-badge {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    flex-shrink: 0;
+  }
+
+  .task-arrow {
+    font-size: 14px;
+    color: var(--line);
+    transition: color 0.2s, transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .task-row:hover .task-arrow { color: var(--rust); transform: translate(2px,-2px); }
+
+  /* ══════════════════════════════
+     EMPTY STATES
+  ══════════════════════════════ */
+  .dash-empty {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    padding: 48px 32px;
+    text-align: center;
+  }
+
+  .dash-empty-icon { font-size: 28px; opacity: 0.15; margin-bottom: 14px; }
+
+  .dash-empty h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .dash-empty p {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+    margin-bottom: 22px;
+    line-height: 1.7;
+  }
+
+  .dash-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 12px 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .dash-empty-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .dash-empty-btn:hover::before { transform: translateX(0); }
+  .dash-empty-btn:hover { transform: translateY(-2px); }
+  .dash-empty-btn span { position: relative; z-index: 1; }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .dash-stats { grid-template-columns: 1fr; gap: 2px; }
+    .teams-grid { grid-template-columns: 1fr 1fr; }
+    .projects-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .teams-grid { grid-template-columns: 1fr; }
+    .task-project { display: none; }
+  }
+
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1>Dashboard</h1>
+  <!-- ══════════ PAGE HEADER ══════════ -->
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Your workspace</p>
+      <h1 class="page-title">
+        Good to see you, <em>{{ user.username }}</em>
+      </h1>
+    </div>
 
-<div class="card">
-<h3>Total Teams</h3>
-<p>{{ teams.count }}</p>
-</div>
+  </div>
 
-<div class="card">
-<h3>Total Projects</h3>
-<p>{{ projects.count }}</p>
-</div>
+  <!-- ══════════ STATS ══════════ -->
+  <div class="dash-stats">
 
-<div class="card">
-<h3>Total Tasks</h3>
-<p>{{ tasks.count }}</p>
-</div>
+    <!-- ✅ {{ teams.count }} unchanged -->
+    <div class="dash-stat">
+      <div class="dash-stat-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="7" cy="7" r="3" stroke="#C4622D" stroke-width="1.4"/>
+          <circle cx="15" cy="7" r="3" stroke="#C4622D" stroke-width="1.4" opacity="0.5"/>
+          <path d="M1 19c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M15 13c2 0 5 1.2 5 6" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="dash-stat-value">{{ teams.count }}<span>+</span></div>
+      <div class="dash-stat-label">Total Teams</div>
+      <div class="dash-stat-sub">Active workspaces</div>
+    </div>
+
+    <!-- ✅ {{ projects.count }} unchanged -->
+    <div class="dash-stat">
+      <div class="dash-stat-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="2" y="3" width="18" height="16" rx="1" stroke="#C4622D" stroke-width="1.4"/>
+          <path d="M6 2v2M16 2v2M2 9h18" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M6 13h10M6 16h6" stroke="#C4622D" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="dash-stat-value">{{ projects.count }}<span>+</span></div>
+      <div class="dash-stat-label">Total Projects</div>
+      <div class="dash-stat-sub">Across all teams</div>
+    </div>
+
+    <!-- ✅ {{ tasks.count }} unchanged -->
+    <div class="dash-stat">
+      <div class="dash-stat-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M4 6h14M4 11h10M4 16h7" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="19" cy="16" r="3" stroke="#C4622D" stroke-width="1.3"/>
+          <path d="M18 16l.8.8 1.5-1.6" stroke="#C4622D" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="dash-stat-value">{{ tasks.count }}<span>+</span></div>
+      <div class="dash-stat-label">Total Tasks</div>
+      <div class="dash-stat-sub">Open &amp; completed</div>
+    </div>
+
+  </div>
+
+  <!-- ══════════ TEAMS ══════════ -->
+  <div class="teams-section">
+    <div class="dash-section-head">
+      <div>
+        <p class="dash-section-eyebrow">Workspaces</p>
+        <h2 class="dash-section-title">Your <em>Teams</em></h2>
+      </div>
+      <a href="{% url 'team_list' %}" class="dash-see-all">See all ↗</a>
+    </div>
+
+    {% if teams %}
+      <div class="teams-grid">
+        {% for team in teams %}
+        <div class="team-card">
+          <div class="team-avatar">{{ team.team_name|first|upper }}</div>
+          <div>
+            <div class="team-name">{{ team.team_name }}</div>
+            <div class="team-meta">{{ team.members.count }} member{{ team.members.count|pluralize }}</div>
+          </div>
+          <span class="team-arrow">↗</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="dash-empty">
+        <div class="dash-empty-icon">👥</div>
+        <h4>No teams yet</h4>
+        <p>Create your first team and start collaborating with others.</p>
+        <a href="/teams/create/" class="dash-empty-btn"><span>Create a Team</span></a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ══════════ PROJECTS ══════════ -->
+  <div class="projects-section">
+    <div class="dash-section-head">
+      <div>
+        <p class="dash-section-eyebrow">Work</p>
+        <h2 class="dash-section-title">Your <em>Projects</em></h2>
+      </div>
+      <a href="/projects/" class="dash-see-all">See all ↗</a>
+    </div>
+
+    {% if projects %}
+      <div class="projects-grid">
+        {% for project in projects %}
+        <div class="project-card">
+          <div class="project-card-top">
+            <div class="project-initial">{{ project.name|first|upper }}</div>
+            <div class="project-name">{{ project.name }}</div>
+          </div>
+          {% if project.team %}
+          <div class="project-team">
+            <div class="project-team-dot"></div>
+            {{ project.team }}
+          </div>
+          {% endif %}
+          <div class="project-footer">
+            <span class="pill pill-progress">Active</span>
+            <span class="project-arrow">↗</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="dash-empty">
+        <div class="dash-empty-icon">📋</div>
+        <h4>No projects yet</h4>
+        <p>Kick off your first project and start tracking work.</p>
+        <a href="/projects/create/" class="dash-empty-btn"><span>Create a Project</span></a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ══════════ TASKS ══════════ -->
+  <div class="tasks-section">
+    <div class="dash-section-head">
+      <div>
+        <p class="dash-section-eyebrow">To-do</p>
+        <h2 class="dash-section-title">Your <em>Tasks</em></h2>
+      </div>
+      <a href="/tasks/" class="dash-see-all">See all ↗</a>
+    </div>
+
+    {% if tasks %}
+      <div class="tasks-list">
+        {% for task in tasks %}
+        <div class="task-row">
+
+          <!-- Status dot by task.status -->
+          {% if task.status == 'done' %}
+            <div class="task-status-dot" style="background:#2E7D52;"></div>
+          {% elif task.status == 'in_progress' %}
+            <div class="task-status-dot" style="background:var(--rust);"></div>
+          {% else %}
+            <div class="task-status-dot" style="background:var(--muted);opacity:0.5;"></div>
+          {% endif %}
+
+          <!-- ✅ task.title unchanged -->
+          <span class="task-title {% if task.status == 'done' %}done{% endif %}">
+            {{ task.title }}
+          </span>
+
+          <!-- ✅ task.project.name unchanged -->
+          {% if task.project %}
+          <span class="task-project">{{ task.project.name }}</span>
+          {% endif %}
+
+          <!-- Status badge -->
+          {% if task.status == 'done' %}
+            <span class="task-badge pill-done">Done</span>
+          {% elif task.status == 'in_progress' %}
+            <span class="task-badge pill-progress">In Progress</span>
+          {% else %}
+            <span class="task-badge pill-todo">To Do</span>
+          {% endif %}
+
+          <span class="task-arrow">↗</span>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="dash-empty">
+        <div class="dash-empty-icon">✅</div>
+        <h4>No tasks yet</h4>
+        <p>Create your first task and start getting things done.</p>
+        <a href="/tasks/create/" class="dash-empty-btn"><span>Create a Task</span></a>
+      </div>
+    {% endif %}
+  </div>
 
 {% endblock %}

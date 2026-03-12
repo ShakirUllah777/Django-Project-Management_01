@@ -1,25 +1,458 @@
 {% extends "base.html" %}
 
+{% block title %}Team Members — Vantage{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ══════════════════════════════
+     MEMBERS GRID
+  ══════════════════════════════ */
+  .members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 2px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .member-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .member-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .member-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--rust);
+    box-shadow: 0 14px 40px rgba(26,22,18,0.1);
+  }
+
+  .member-card:hover::before { transform: scaleX(1); }
+
+  /* Card number watermark */
+  .member-card-num {
+    position: absolute;
+    top: 16px; right: 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: var(--ink);
+    opacity: 0.04;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* ── Avatar ── */
+  .member-avatar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .member-avatar {
+    width: 54px; height: 54px;
+    border-radius: 50%;
+    background: rgba(196,98,45,0.1);
+    border: 1px solid rgba(196,98,45,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--rust);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+    position: relative;
+  }
+
+  .member-card:hover .member-avatar {
+    background: rgba(196,98,45,0.18);
+    border-color: rgba(196,98,45,0.5);
+  }
+
+  /* Online indicator */
+  .member-online {
+    position: absolute;
+    bottom: 2px; right: 2px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 2px solid var(--card);
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(46,125,82,0.3); }
+    50%      { box-shadow: 0 0 0 4px rgba(46,125,82,0.08); }
+  }
+
+  /* ── Username ── */
+  .member-username {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .member-handle {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--muted);
+    margin-top: 3px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Role badge ── */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    background: #FBF0EA;
+    color: var(--rust);
+    width: fit-content;
+  }
+
+  .role-badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  .role-manager   { background: rgba(26,22,18,0.06);  color: var(--ink); }
+  .role-developer { background: #EAF0FB; color: #1A5C8A; }
+  .role-designer  { background: #F3EAF9; color: #7B2D9E; }
+  .role-analyst   { background: var(--green-bg); color: var(--green); }
+  .role-qa        { background: #FFF8E1; color: #B07D00; }
+
+  /* ── Card footer ── */
+  .member-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    margin-top: auto;
+  }
+
+  .member-since {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .member-since svg { opacity: 0.4; }
+
+  .member-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+
+  .member-status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* ══════════════════════════════
+     SUMMARY BAR
+  ══════════════════════════════ */
+  .members-summary {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .summary-item {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 18px 28px;
+    flex: 1;
+  }
+
+  .summary-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .summary-val.rust  { color: var(--rust); font-size: 22px; padding-top: 6px; }
+  .summary-val.green { color: var(--green); }
+
+  .summary-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════
+     ROLE LEGEND
+  ══════════════════════════════ */
+  .role-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s ease 0.05s both;
+  }
+
+  .role-legend-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+
+  .legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    cursor: default;
+  }
+
+  .legend-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  /* ══════════════════════════════
+     EMPTY STATE
+  ══════════════════════════════ */
+  .members-empty {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    padding: 80px 40px;
+    text-align: center;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .members-empty-icon { font-size: 36px; opacity: 0.15; margin-bottom: 18px; }
+
+  .members-empty h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .members-empty p {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 320px;
+    margin: 0 auto 28px;
+  }
+
+  .members-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 15px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .members-empty-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .members-empty-btn:hover::before { transform: translateX(0); }
+  .members-empty-btn:hover { transform: translateY(-2px); }
+  .members-empty-btn span { position: relative; z-index: 1; }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .members-summary { flex-wrap: wrap; }
+    .summary-item { min-width: calc(50% - 1px); }
+    .members-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .members-grid { grid-template-columns: 1fr; }
+    .summary-item { min-width: 100%; }
+    .role-legend { display: none; }
+  }
+
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1>Team Members</h1>
+  <!-- ══════════ PAGE HEADER ══════════ -->
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">People</p>
+      <h1 class="page-title">Team <em>Members</em></h1>
+    </div>
+  </div>
 
-<ul>
+  {% if members %}
 
-{% for member in members %}
+    <!-- ══════════ SUMMARY BAR ══════════ -->
+    <div class="members-summary">
+      <div class="summary-item">
+        <div class="summary-val">{{ members|length }}</div>
+        <div class="summary-lbl">Total Members</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-val green">{{ members|length }}</div>
+        <div class="summary-lbl">Active</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-val rust">Team</div>
+        <div class="summary-lbl">Current View</div>
+      </div>
+    </div>
 
-<li>
+    <!-- ══════════ ROLE LEGEND ══════════ -->
+    <div class="role-legend">
+      <span class="role-legend-label">Roles:</span>
+      <span class="legend-pill role-manager">
+        <span class="legend-dot" style="background:var(--ink);"></span>Manager
+      </span>
+      <span class="legend-pill role-developer">
+        <span class="legend-dot" style="background:#1A5C8A;"></span>Developer
+      </span>
+      <span class="legend-pill role-designer">
+        <span class="legend-dot" style="background:#7B2D9E;"></span>Designer
+      </span>
+      <span class="legend-pill role-analyst">
+        <span class="legend-dot" style="background:var(--green);"></span>Analyst
+      </span>
+      <span class="legend-pill role-qa">
+        <span class="legend-dot" style="background:#B07D00;"></span>QA
+      </span>
+    </div>
 
-{{ member.user.username }} - {{ member.role }}
+    <!-- ══════════ MEMBERS GRID ══════════ -->
+    <div class="members-grid">
 
-</li>
+      {% for member in members %}
+      <div class="member-card">
 
-{% empty %}
+        <!-- Watermark number -->
+        <div class="member-card-num">{{ forloop.counter }}</div>
 
-<li>No members found.</li>
+        <!-- Avatar + name -->
+        <div class="member-avatar-wrap">
+          <div class="member-avatar">
+            <!-- ✅ member.user.username — first initial -->
+            {{ member.user.username|first|upper }}
+            <div class="member-online"></div>
+          </div>
+          <div>
+            <!-- ✅ member.user.username unchanged -->
+            <div class="member-username">{{ member.user.username }}</div>
+            <div class="member-handle">@{{ member.user.username|lower }}</div>
+          </div>
+        </div>
 
-{% endfor %}
+        <!-- ✅ member.role unchanged — styled badge -->
+        <div class="role-badge
+          {% if member.role|lower == 'manager' %}role-manager
+          {% elif member.role|lower == 'developer' %}role-developer
+          {% elif member.role|lower == 'designer' %}role-designer
+          {% elif member.role|lower == 'analyst' %}role-analyst
+          {% elif member.role|lower == 'qa' %}role-qa
+          {% endif %}">
+          <div class="role-badge-dot"></div>
+          {{ member.role }}
+        </div>
 
-</ul>
+        <!-- Footer -->
+        <div class="member-card-footer">
+          <div class="member-since">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M6 3v3l2 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            Member
+          </div>
+          <div class="member-status">
+            <div class="member-status-dot"></div>
+            Active
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+
+    </div>
+
+  {% else %}
+
+    <!-- ══════════ EMPTY STATE ══════════ -->
+    <!-- ✅ "No members found." text preserved -->
+    <div class="members-empty">
+      <div class="members-empty-icon">👤</div>
+      <h3>No members found.</h3>
+      <p>This team doesn't have any members yet. Add someone to get started.</p>
+      <a href="/teams/add-member/" class="members-empty-btn">
+        <span>Add a Member</span>
+      </a>
+    </div>
+
+  {% endif %}
 
 {% endblock %}

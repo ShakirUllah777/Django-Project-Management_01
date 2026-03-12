@@ -1,29 +1,400 @@
 {% extends "base.html" %}
 
+{% block title %}My Teams — Vantage{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ══════════════════════════════
+     TEAMS GRID
+  ══════════════════════════════ */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .team-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Rust top accent bar */
+  .team-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .team-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--rust);
+    box-shadow: 0 14px 40px rgba(26,22,18,0.1);
+  }
+
+  .team-card:hover::before { transform: scaleX(1); }
+
+  /* Card body */
+  .team-card-body { padding: 28px 28px 20px; flex: 1; }
+
+  .team-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .team-avatar {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(196,98,45,0.1);
+    border: 1px solid rgba(196,98,45,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--rust);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .team-card:hover .team-avatar {
+    background: rgba(196,98,45,0.18);
+    border-color: rgba(196,98,45,0.5);
+  }
+
+  .team-info { flex: 1; min-width: 0; }
+
+  .team-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Role badge */
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    background: #FBF0EA;
+    color: var(--rust);
+  }
+
+  .role-badge-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--rust);
+    flex-shrink: 0;
+  }
+
+  /* Role variants */
+  .role-manager   { background: rgba(26,22,18,0.07);  color: var(--ink); }
+  .role-manager   .role-badge-dot { background: var(--ink); }
+  .role-developer { background: #EAF0FB; color: #1A5C8A; }
+  .role-developer .role-badge-dot { background: #1A5C8A; }
+  .role-designer  { background: #F3EAF9; color: #7B2D9E; }
+  .role-designer  .role-badge-dot { background: #7B2D9E; }
+  .role-analyst   { background: var(--green-bg); color: var(--green); }
+  .role-analyst   .role-badge-dot { background: var(--green); }
+  .role-qa        { background: #FFF8E1; color: #B07D00; }
+  .role-qa        .role-badge-dot { background: #B07D00; }
+
+  /* Active status pill */
+  .team-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .team-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 2px rgba(46,125,82,0.2);
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(46,125,82,0.2); }
+    50%      { box-shadow: 0 0 0 5px rgba(46,125,82,0.08); }
+  }
+
+  .team-status-txt {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--green);
+    letter-spacing: 0.06em;
+  }
+
+  /* Card footer — action link */
+  .team-card-footer {
+    border-top: 1px solid var(--line);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ✅ The <a> wraps the entire footer — href unchanged */
+  .team-view-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .team-view-link:hover { color: var(--rust); }
+
+  .team-view-arrow {
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+
+  .team-view-link:hover .team-view-arrow { transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     SUMMARY BAR (above grid)
+  ══════════════════════════════ */
+  .teams-summary {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .summary-item {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 18px 28px;
+    flex: 1;
+  }
+
+  .summary-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .summary-val.rust { color: var(--rust); }
+
+  .summary-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════
+     EMPTY STATE
+  ══════════════════════════════ */
+  .teams-empty {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    padding: 80px 40px;
+    text-align: center;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .teams-empty-icon { font-size: 36px; opacity: 0.15; margin-bottom: 18px; }
+
+  .teams-empty h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .teams-empty p {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 320px;
+    margin: 0 auto 28px;
+  }
+
+  .teams-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 15px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .teams-empty-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .teams-empty-btn:hover::before { transform: translateX(0); }
+  .teams-empty-btn:hover { transform: translateY(-2px); }
+  .teams-empty-btn span { position: relative; z-index: 1; }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .teams-summary { flex-wrap: wrap; }
+    .summary-item { min-width: calc(50% - 1px); }
+    .teams-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 560px) {
+    .teams-grid { grid-template-columns: 1fr; }
+    .summary-item { min-width: 100%; }
+  }
+
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1>My Teams</h1>
+  <!-- ══════════ PAGE HEADER ══════════ -->
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Workspaces</p>
+      <h1 class="page-title">My <em>Teams</em></h1>
+    </div>
+  </div>
 
-<ul>
+  {% if teams %}
 
-{% for team_member in teams %}
+    <!-- ══════════ SUMMARY BAR ══════════ -->
+    <div class="teams-summary">
+      <div class="summary-item">
+        <div class="summary-val">{{ teams|length }}</div>
+        <div class="summary-lbl">Total Teams</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-val rust">Active</div>
+        <div class="summary-lbl">Status</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-val">{{ user.username|first|upper }}</div>
+        <div class="summary-lbl">Your Account</div>
+      </div>
+    </div>
 
-<li>
+    <!-- ══════════ TEAMS GRID ══════════ -->
+    <div class="teams-grid">
 
-<a href="/teams/{{ team_member.team.id }}/">
+      {% for team_member in teams %}
+      <div class="team-card">
 
-{{ team_member.team.name }} - Role: {{ team_member.role }}
+        <div class="team-card-body">
+          <div class="team-card-top">
 
-</a>
+            <!-- Avatar initial -->
+            <div class="team-avatar">
+              {{ team_member.team.name|first|upper }}
+            </div>
 
-</li>
+            <div class="team-info">
 
-{% empty %}
+              <!-- ✅ team_member.team.name unchanged -->
+              <div class="team-name">{{ team_member.team.name }}</div>
 
-<li>No teams assigned</li>
+              <!-- ✅ team_member.role unchanged — styled badge -->
+              <div class="role-badge
+                {% if team_member.role|lower == 'manager' %}role-manager
+                {% elif team_member.role|lower == 'developer' %}role-developer
+                {% elif team_member.role|lower == 'designer' %}role-designer
+                {% elif team_member.role|lower == 'analyst' %}role-analyst
+                {% elif team_member.role|lower == 'qa' %}role-qa
+                {% endif %}">
+                <div class="role-badge-dot"></div>
+                {{ team_member.role }}
+              </div>
 
-{% endfor %}
+            </div>
+          </div>
 
-</ul>
+          <!-- Active status -->
+          <div class="team-status">
+            <div class="team-status-dot"></div>
+            <span class="team-status-txt">Active</span>
+          </div>
+        </div>
+
+        <!-- Card footer with original link -->
+        <div class="team-card-footer">
+
+          <!-- ✅ href="/teams/{{ team_member.team.id }}/" unchanged -->
+          <a href="/teams/{{ team_member.team.id }}/" class="team-view-link">
+            <span>View Team</span>
+            <span class="team-view-arrow">↗</span>
+          </a>
+
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+
+  {% else %}
+
+    <!-- ══════════ EMPTY STATE ══════════ -->
+    <div class="teams-empty">
+      <div class="teams-empty-icon">👥</div>
+      <h3>No teams assigned</h3>
+      <p>You haven't been added to any teams yet. Create one or ask a team manager to add you.</p>
+      <a href="/teams/create/" class="teams-empty-btn">
+        <span>Create a Team</span>
+      </a>
+    </div>
+
+  {% endif %}
 
 {% endblock %}

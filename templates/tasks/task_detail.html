@@ -1,24 +1,590 @@
-<h2>{{ task.title }}</h2>
+{% extends "base.html" %}
 
-<p>{{ task.description }}</p>
+{% block title %}{{ task.title }} — Vantage{% endblock %}
 
-<p>Project: {{ task.project.name }}</p>
+{% block extra_css %}
+<style>
 
-<p>Due: {{ task.due_date }}</p>
+  /* ══════════════════════════════
+     LAYOUT
+  ══════════════════════════════ */
+  .task-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 2px;
+    align-items: start;
+  }
 
+  /* ══════════════════════════════
+     MAIN CARD
+  ══════════════════════════════ */
+  .task-main {
+    background: var(--card);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
 
-<form method="POST">
+  /* Coloured top band by status */
+  .task-band {
+    height: 4px;
+    width: 100%;
+  }
 
-{% csrf_token %}
+  .task-band.todo     { background: var(--muted); opacity: 0.4; }
+  .task-band.progress { background: var(--rust); }
+  .task-band.completed { background: var(--green); }
 
-<select name="status">
+  .task-main-body { padding: 40px 44px; }
 
-<option value="todo">Todo</option>
-<option value="progress">In Progress</option>
-<option value="completed">Completed</option>
+  /* Eyebrow row */
+  .task-eyebrow-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
 
-</select>
+  .task-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
 
-<button type="submit">Update Status</button>
+  .task-eyebrow-sep {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--line);
+  }
 
-</form>
+  /* ✅ task.title */
+  .task-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 28px;
+  }
+
+  .task-title em { font-style: italic; color: var(--rust); }
+
+  /* Meta row */
+  .task-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .task-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .task-meta-icon {
+    width: 30px; height: 30px;
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .task-meta-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+
+  /* ✅ task.project.name / task.due_date */
+  .task-meta-value {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  /* Divider */
+  .task-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 32px 0;
+  }
+
+  /* ✅ task.description */
+  .task-desc-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .task-description {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.85;
+  }
+
+  .task-description:empty::after {
+    content: 'No description provided.';
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* ══════════════════════════════
+     SIDEBAR
+  ══════════════════════════════ */
+  .task-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  /* Update status card */
+  .sidebar-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+
+  .sidebar-card-head {
+    background: var(--ink);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-card-head-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream);
+  }
+
+  .sidebar-card-body { padding: 24px; }
+
+  /* Current status display */
+  .current-status-wrap {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .current-status-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .current-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+  }
+
+  .current-status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+  }
+
+  .badge-todo      { background: #F2EFEC; color: var(--muted); }
+  .badge-progress  { background: #FBF0EA; color: var(--rust); }
+  .badge-completed { background: var(--green-bg); color: var(--green); }
+
+  /* ✅ ORIGINAL FORM — select name="status", method="POST" */
+  .status-form { display: flex; flex-direction: column; gap: 14px; }
+
+  .select-wrap {
+    position: relative;
+  }
+
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--muted);
+    pointer-events: none;
+    transition: border-top-color 0.2s;
+  }
+
+  .select-wrap:focus-within::after { border-top-color: var(--rust); }
+
+  /* Animated underline on select */
+  .select-underline {
+    position: relative;
+  }
+
+  .select-underline::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 1px;
+    background: var(--rust);
+    transition: width 0.35s ease;
+    z-index: 1;
+  }
+
+  .select-underline:focus-within::before { width: 100%; }
+
+  .status-select {
+    width: 100%;
+    background: var(--cream);
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 11px 36px 11px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ink);
+    outline: none;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+
+  .status-select:focus { border-color: transparent; }
+
+  /* Submit button */
+  .status-submit {
+    width: 100%;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    padding: 15px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .status-submit::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .status-submit:hover::before { transform: translateX(0); }
+  .status-submit:hover { transform: translateY(-2px); }
+  .status-submit span, .status-submit svg { position: relative; z-index: 1; }
+
+  /* ── Info card ── */
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+  }
+
+  .info-card-head {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .info-card-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .info-rows { display: flex; flex-direction: column; }
+
+  .info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .info-row:last-child { border-bottom: none; }
+
+  .info-row-label {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .info-row-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    text-align: right;
+  }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 28px;
+    transition: color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .back-link:hover { color: var(--rust); }
+  .back-link svg { transition: transform 0.2s; }
+  .back-link:hover svg { transform: translateX(-3px); }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 960px) {
+    .task-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .task-sidebar {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .task-sidebar > * { flex: 1; min-width: 260px; }
+  }
+
+  @media (max-width: 600px) {
+    .task-main-body { padding: 28px 24px; }
+    .task-meta-row { gap: 16px; }
+    .task-sidebar { flex-direction: column; }
+    .task-sidebar > * { min-width: 100%; }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- Back link -->
+  <a href="/tasks/" class="back-link">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Back to Tasks
+  </a>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb" style="margin-bottom:28px;">
+    <a href="/tasks/">Tasks</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-cur">{{ task.title }}</span>
+  </div>
+
+  <div class="task-layout">
+
+    <!-- ══════════ MAIN ══════════ -->
+    <div class="task-main">
+
+      <!-- Status colour band -->
+      <div class="task-band
+        {% if task.status == 'completed' %}completed
+        {% elif task.status == 'progress' %}progress
+        {% else %}todo{% endif %}">
+      </div>
+
+      <div class="task-main-body">
+
+        <!-- Eyebrow -->
+        <div class="task-eyebrow-row">
+          <span class="task-eyebrow">Task Detail</span>
+          <div class="task-eyebrow-sep"></div>
+
+          <!-- Current status inline pill -->
+          {% if task.status == 'completed' %}
+            <span class="current-status-badge badge-completed">
+              <span class="current-status-dot" style="background:var(--green);"></span>
+              Completed
+            </span>
+          {% elif task.status == 'progress' %}
+            <span class="current-status-badge badge-progress">
+              <span class="current-status-dot" style="background:var(--rust);"></span>
+              In Progress
+            </span>
+          {% else %}
+            <span class="current-status-badge badge-todo">
+              <span class="current-status-dot" style="background:var(--muted);opacity:0.5;"></span>
+              To Do
+            </span>
+          {% endif %}
+
+        </div>
+
+        <!-- ✅ task.title -->
+        <h1 class="task-title">{{ task.title }}</h1>
+
+        <!-- Meta row -->
+        <div class="task-meta-row">
+
+          <!-- ✅ task.project.name -->
+          {% if task.project.name %}
+          <div class="task-meta-item">
+            <div class="task-meta-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="2" width="14" height="12" rx="1" stroke="#C4622D" stroke-width="1.3"/>
+                <path d="M4 1v2M12 1v2M1 6h14" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round"/>
+                <path d="M4 9h8M4 11.5h5" stroke="#C4622D" stroke-width="1.1" stroke-linecap="round" opacity="0.5"/>
+              </svg>
+            </div>
+            <div>
+              <div class="task-meta-label">Project</div>
+              <div class="task-meta-value">{{ task.project.name }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- ✅ task.due_date -->
+          {% if task.due_date %}
+          <div class="task-meta-item">
+            <div class="task-meta-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="#C4622D" stroke-width="1.3"/>
+                <path d="M8 4.5v4l2.5 1.5" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <div class="task-meta-label">Due Date</div>
+              <div class="task-meta-value">{{ task.due_date }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+        </div>
+
+        <div class="task-divider"></div>
+
+        <!-- ✅ task.description -->
+        <div class="task-desc-label">Description</div>
+        <div class="task-description">{{ task.description }}</div>
+
+      </div>
+    </div>
+
+    <!-- ══════════ SIDEBAR ══════════ -->
+    <div class="task-sidebar">
+
+      <!-- Update status card -->
+      <div class="sidebar-card">
+
+        <div class="sidebar-card-head">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7h10M8 3l4 4-4 4" stroke="rgba(247,243,238,0.6)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="sidebar-card-head-title">Update Status</span>
+        </div>
+
+        <div class="sidebar-card-body">
+
+          <!-- Current status -->
+          <div class="current-status-wrap">
+            <div class="current-status-label">Current Status</div>
+            {% if task.status == 'completed' %}
+              <span class="current-status-badge badge-completed">
+                <span class="current-status-dot" style="background:var(--green);"></span>
+                Completed
+              </span>
+            {% elif task.status == 'progress' %}
+              <span class="current-status-badge badge-progress">
+                <span class="current-status-dot" style="background:var(--rust);"></span>
+                In Progress
+              </span>
+            {% else %}
+              <span class="current-status-badge badge-todo">
+                <span class="current-status-dot" style="background:var(--muted);opacity:0.5;"></span>
+                To Do
+              </span>
+            {% endif %}
+          </div>
+
+          <!-- ✅ ORIGINAL FORM — method="POST", name="status", all options unchanged -->
+          <form method="POST" class="status-form">
+            {% csrf_token %}
+
+            <div class="select-underline select-wrap">
+              <select name="status" class="status-select">
+                <option value="todo"      {% if task.status == 'todo'      %}selected{% endif %}>Todo</option>
+                <option value="progress"  {% if task.status == 'progress'  %}selected{% endif %}>In Progress</option>
+                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+              </select>
+            </div>
+
+            <button type="submit" class="status-submit">
+              <span>Update Status</span>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <path d="M2.5 6.5h8M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+
+          </form>
+          <!-- ✅ END ORIGINAL FORM -->
+
+        </div>
+      </div>
+
+      <!-- Info card -->
+      <div class="info-card">
+        <div class="info-card-head">
+          <div class="info-card-title">Task Info</div>
+        </div>
+        <div class="info-rows">
+          <div class="info-row">
+            <span class="info-row-label">Project</span>
+            <span class="info-row-value">{{ task.project.name|default:"—" }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Due Date</span>
+            <span class="info-row-value">{{ task.due_date|default:"—" }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-row-label">Status</span>
+            <span class="info-row-value">{{ task.status|capfirst }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+{% endblock %}

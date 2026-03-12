@@ -1,38 +1,576 @@
 {% extends "base.html" %}
 
+{% block title %}My Tasks — Vantage{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ══════════════════════════════
+     TOOLBAR
+  ══════════════════════════════ */
+  .tasks-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 11px 14px 11px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input::placeholder { color: #C5BAB2; }
+  .search-input:focus { border-color: var(--rust); }
+
+  /* Filter pills */
+  .filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .filter-pill {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-pill:hover { border-color: var(--rust); color: var(--rust); }
+  .filter-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+  /* ══════════════════════════════
+     STATS BAR
+  ══════════════════════════════ */
+  .tasks-stats {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.5s ease 0.05s both;
+  }
+
+  .t-stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 16px 24px;
+    flex: 1;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .t-stat:hover { border-color: var(--rust); transform: translateY(-2px); }
+
+  .t-stat-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .t-stat-val.rust  { color: var(--rust); }
+  .t-stat-val.green { color: var(--green); }
+  .t-stat-val.muted { color: var(--muted); }
+
+  .t-stat-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════
+     TABLE
+  ══════════════════════════════ */
+  .tasks-table-wrap {
+    background: var(--card);
+    border: 1px solid var(--line);
+    overflow-x: auto;
+    animation: fadeUp 0.5s ease 0.15s both;
+  }
+
+  .tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  /* Head */
+  .tasks-table thead tr {
+    border-bottom: 1px solid var(--line);
+    background: var(--cream);
+  }
+
+  .tasks-table thead th {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 22px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .tasks-table thead th:last-child { text-align: right; }
+
+  /* Body rows */
+  .tasks-table tbody tr {
+    border-bottom: 1px solid var(--line);
+    transition: background 0.15s, transform 0.15s;
+    position: relative;
+  }
+
+  .tasks-table tbody tr:last-child { border-bottom: none; }
+
+  .tasks-table tbody tr:hover { background: #FDFAF7; }
+
+  .tasks-table tbody td {
+    padding: 18px 22px;
+    vertical-align: middle;
+  }
+
+  /* Status indicator bar on row left */
+  .tasks-table tbody tr td:first-child {
+    position: relative;
+    padding-left: 30px;
+  }
+
+  .tasks-table tbody tr td:first-child::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+
+  .row-todo    td:first-child::before { background: var(--muted); opacity: 0.3; }
+  .row-progress td:first-child::before { background: var(--rust); }
+  .row-done    td:first-child::before { background: var(--green); }
+
+  /* Title cell */
+  .task-title-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .task-title-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .task-title-text {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .task-title-text.done {
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  /* Status badge */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    white-space: nowrap;
+  }
+
+  .status-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .badge-todo     { background: #F2EFEC; color: var(--muted); }
+  .badge-progress { background: #FBF0EA; color: var(--rust); }
+  .badge-done     { background: var(--green-bg); color: var(--green); }
+
+  /* Priority badge */
+  .priority-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    white-space: nowrap;
+  }
+
+  .priority-low    { background: var(--green-bg); color: var(--green); }
+  .priority-medium { background: #FBF0EA; color: var(--rust); }
+  .priority-high   { background: #FDE8E8; color: #C0392B; }
+
+  /* Action cell */
+  .task-action-cell { text-align: right; }
+
+  /* ✅ Edit link — /tasks/{{task.id}} unchanged */
+  .edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    background: transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .edit-btn:hover {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  /* ══════════════════════════════
+     EMPTY STATE
+  ══════════════════════════════ */
+  .tasks-empty {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    padding: 80px 40px;
+    text-align: center;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .tasks-empty-icon { font-size: 36px; opacity: 0.15; margin-bottom: 18px; }
+
+  .tasks-empty h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .tasks-empty p {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.8;
+    max-width: 300px;
+    margin: 0 auto 28px;
+  }
+
+  .tasks-empty-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 15px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .tasks-empty-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .tasks-empty-btn:hover::before { transform: translateX(0); }
+  .tasks-empty-btn:hover { transform: translateY(-2px); }
+  .tasks-empty-btn span { position: relative; z-index: 1; }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .tasks-stats { flex-wrap: wrap; }
+    .t-stat { min-width: calc(50% - 1px); }
+  }
+
+  @media (max-width: 640px) {
+    .t-stat { min-width: 100%; }
+    .tasks-table thead th:nth-child(3),
+    .tasks-table tbody td:nth-child(3) { display: none; }
+  }
+
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1>My Tasks</h1>
+  <!-- ══════════ PAGE HEADER ══════════ -->
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">To-do</p>
+      <h1 class="page-title">My <em>Tasks</em></h1>
+    </div>
+  </div>
 
-<table border="1" cellpadding="10">
+  {% if tasks %}
 
-<tr>
+    <!-- ══════════ STATS BAR ══════════ -->
+    <div class="tasks-stats" id="statsBar">
+      <div class="t-stat">
+        <div class="t-stat-val" id="countAll">{{ tasks|length }}</div>
+        <div class="t-stat-lbl">Total</div>
+      </div>
+      <div class="t-stat">
+        <div class="t-stat-val muted" id="countTodo">—</div>
+        <div class="t-stat-lbl">To Do</div>
+      </div>
+      <div class="t-stat">
+        <div class="t-stat-val rust" id="countProgress">—</div>
+        <div class="t-stat-lbl">In Progress</div>
+      </div>
+      <div class="t-stat">
+        <div class="t-stat-val green" id="countDone">—</div>
+        <div class="t-stat-lbl">Done</div>
+      </div>
+    </div>
 
-<th>Title</th>
-<th>Status</th>
-<th>Priority</th>
-<th>Action</th>
+    <!-- ══════════ TOOLBAR ══════════ -->
+    <div class="tasks-toolbar">
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M10.5 10.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          id="taskSearch"
+          placeholder="Search tasks…"
+          oninput="filterTasks()"
+        />
+      </div>
 
-</tr>
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-pill" onclick="setFilter('todo', this)">To Do</button>
+        <button class="filter-pill" onclick="setFilter('in_progress', this)">In Progress</button>
+        <button class="filter-pill" onclick="setFilter('done', this)">Done</button>
+      </div>
+    </div>
 
-{% for task in tasks %}
+    <!-- ══════════ TABLE ══════════ -->
+    <div class="tasks-table-wrap">
+      <table class="tasks-table" id="tasksTable">
 
-<tr>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Action</th>
+          </tr>
+        </thead>
 
-<td>{{ task.title }}</td>
-<td>{{ task.status }}</td>
-<td>{{ task.priority }}</td>
+        <tbody>
+          {% for task in tasks %}
+          <tr
+            class="task-row-item
+              {% if task.status == 'done' %}row-done
+              {% elif task.status == 'in_progress' %}row-progress
+              {% else %}row-todo{% endif %}"
+            data-status="{{ task.status }}"
+            data-title="{{ task.title|lower }}"
+          >
 
-<td>
+            <!-- ✅ task.title unchanged -->
+            <td>
+              <div class="task-title-cell">
+                {% if task.status == 'done' %}
+                  <div class="task-title-dot" style="background:var(--green);"></div>
+                {% elif task.status == 'in_progress' %}
+                  <div class="task-title-dot" style="background:var(--rust);"></div>
+                {% else %}
+                  <div class="task-title-dot" style="background:var(--muted);opacity:0.4;"></div>
+                {% endif %}
+                <span class="task-title-text {% if task.status == 'done' %}done{% endif %}">
+                  {{ task.title }}
+                </span>
+              </div>
+            </td>
 
-<a href="/tasks/{{task.id}}">Edit</a>
+            <!-- ✅ task.status unchanged -->
+            <td>
+              {% if task.status == 'done' %}
+                <span class="status-badge badge-done">
+                  <span class="status-badge-dot"></span>Done
+                </span>
+              {% elif task.status == 'in_progress' %}
+                <span class="status-badge badge-progress">
+                  <span class="status-badge-dot"></span>In Progress
+                </span>
+              {% else %}
+                <span class="status-badge badge-todo">
+                  <span class="status-badge-dot"></span>To Do
+                </span>
+              {% endif %}
+            </td>
 
-</td>
+            <!-- ✅ task.priority unchanged -->
+            <td>
+              {% if task.priority == 'high' %}
+                <span class="priority-badge priority-high">↑ High</span>
+              {% elif task.priority == 'medium' %}
+                <span class="priority-badge priority-medium">→ Medium</span>
+              {% elif task.priority == 'low' %}
+                <span class="priority-badge priority-low">↓ Low</span>
+              {% else %}
+                <span class="priority-badge priority-low">{{ task.priority }}</span>
+              {% endif %}
+            </td>
 
-</tr>
+            <!-- ✅ /tasks/{{task.id}} unchanged -->
+            <td class="task-action-cell">
+              <a href="/tasks/{{task.id}}" class="edit-btn">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M8.5 1.5l2 2L4 10H2v-2l6.5-6.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                </svg>
+                Edit
+              </a>
+            </td>
 
-{% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
 
-</table>
+      </table>
+    </div>
 
+    <!-- No results row (shown by JS) -->
+    <div id="noResults" style="display:none;">
+      <div class="tasks-empty" style="border-style:solid;">
+        <div class="tasks-empty-icon">🔍</div>
+        <h3>No results found</h3>
+        <p>Try a different search term or clear the filter.</p>
+      </div>
+    </div>
+
+  {% else %}
+
+    <!-- ══════════ EMPTY STATE ══════════ -->
+    <div class="tasks-empty">
+      <div class="tasks-empty-icon">✅</div>
+      <h3>No tasks yet</h3>
+      <p>Create your first task and start tracking your work.</p>
+      <a href="/tasks/create/" class="tasks-empty-btn">
+        <span>Create a Task</span>
+      </a>
+    </div>
+
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentFilter = 'all';
+
+  // Count stats on load
+  function recount() {
+    const rows = document.querySelectorAll('.task-row-item');
+    let todo = 0, progress = 0, done = 0;
+    rows.forEach(r => {
+      const s = r.dataset.status;
+      if (s === 'done') done++;
+      else if (s === 'in_progress') progress++;
+      else todo++;
+    });
+    const el = id => document.getElementById(id);
+    if (el('countTodo'))     el('countTodo').textContent     = todo;
+    if (el('countProgress')) el('countProgress').textContent = progress;
+    if (el('countDone'))     el('countDone').textContent     = done;
+  }
+
+  // Filter by status pill
+  function setFilter(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    filterTasks();
+  }
+
+  // Combined search + filter
+  function filterTasks() {
+    const query = (document.getElementById('taskSearch')?.value || '').toLowerCase().trim();
+    const rows  = document.querySelectorAll('.task-row-item');
+    let visible = 0;
+
+    rows.forEach(row => {
+      const title     = row.dataset.title || '';
+      const status    = row.dataset.status || '';
+      const matchText = query === '' || title.includes(query);
+      const matchFilter =
+        currentFilter === 'all' ||
+        (currentFilter === 'todo'        && status !== 'done' && status !== 'in_progress') ||
+        (currentFilter === 'in_progress' && status === 'in_progress') ||
+        (currentFilter === 'done'        && status === 'done');
+
+      if (matchText && matchFilter) {
+        row.style.display = '';
+        visible++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    const noResults = document.getElementById('noResults');
+    const tableWrap = document.querySelector('.tasks-table-wrap');
+    if (noResults && tableWrap) {
+      noResults.style.display  = visible === 0 ? 'block' : 'none';
+      tableWrap.style.display  = visible === 0 ? 'none'  : 'block';
+    }
+  }
+
+  recount();
+</script>
 {% endblock %}

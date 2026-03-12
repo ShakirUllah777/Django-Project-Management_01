@@ -1,15 +1,530 @@
-<h2>Login</h2>
+{% extends "base.html" %}
 
-<form method="POST">
+{% block title %}Login — Vantage{% endblock %}
 
-    {% csrf_token %}
+{% block extra_css %}
+<style>
 
-    <input type="text" name="username" placeholder="Username"><br><br>
+  .page-container > .content-wrap {
+    padding: 0;
+    max-width: 100%;
+  }
 
-    <input type="password" name="password" placeholder="Password"><br><br>
+  /* ══════════════════════════════
+     SPLIT LAYOUT
+  ══════════════════════════════ */
+  .auth-wrap {
+    min-height: calc(100vh - 64px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 
-    <button type="submit">Login</button>
+  /* ── Left: Form panel ── */
+  .auth-left {
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 64px;
+  }
 
-</form>
+  .auth-form-wrap {
+    width: 100%;
+    max-width: 400px;
+    animation: fadeUp 0.6s ease both;
+  }
 
-<p>Don't have an account? <a href="/register">Register</a></p>
+  .auth-form-header { margin-bottom: 48px; }
+
+  .auth-form-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 10px;
+  }
+
+  .auth-form-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 42px;
+    font-weight: 300;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+
+  .auth-form-title em { font-style: italic; color: var(--rust); }
+
+  .auth-form-sub {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    margin-top: 10px;
+    line-height: 1.7;
+  }
+
+  /* ── Fields ── */
+  .auth-form { display: flex; flex-direction: column; }
+
+  .auth-field {
+    position: relative;
+    margin-bottom: 32px;
+  }
+
+  .auth-field-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .auth-field label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .auth-field-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .auth-field-hint:hover { color: var(--rust); border-color: var(--rust); }
+
+  .auth-field input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 10px 32px 10px 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .auth-field input::placeholder { color: #C5BAB2; }
+
+  .auth-field::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 0; height: 1px;
+    background: var(--rust);
+    transition: width 0.35s ease;
+  }
+
+  .auth-field:focus-within::after { width: 100%; }
+  .auth-field:focus-within input { border-color: transparent; }
+
+  .auth-field-inner { position: relative; }
+
+  .field-toggle {
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--muted);
+    transition: color 0.2s;
+    line-height: 1;
+  }
+
+  .field-toggle:hover { color: var(--rust); }
+
+  /* ── Submit ── */
+  .auth-submit {
+    width: 100%;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    padding: 17px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .auth-submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--rust);
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .auth-submit:hover::before { transform: translateX(0); }
+  .auth-submit:hover { transform: translateY(-2px); }
+  .auth-submit span, .auth-submit svg { position: relative; z-index: 1; }
+
+  /* ── Divider ── */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 28px 0;
+  }
+
+  .auth-divider-line { flex: 1; height: 1px; background: var(--line); }
+
+  .auth-divider span {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Footer ── */
+  .auth-footer {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+  }
+
+  .auth-footer a {
+    color: var(--rust);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .auth-footer a:hover { border-color: var(--rust); }
+
+  /* ══════════════════════════════
+     RIGHT DARK PANEL
+  ══════════════════════════════ */
+  .auth-right {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 64px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auth-right::before {
+    content: '';
+    position: absolute;
+    width: 420px; height: 420px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    bottom: -120px; right: -120px;
+    pointer-events: none;
+  }
+
+  .auth-right::after {
+    content: '';
+    position: absolute;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    top: -60px; left: -60px;
+    pointer-events: none;
+  }
+
+  .auth-right-inner { position: relative; z-index: 1; }
+
+  .auth-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .auth-eyebrow-line {
+    width: 28px; height: 1px;
+    background: var(--rust);
+    flex-shrink: 0;
+  }
+
+  .auth-eyebrow span {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
+
+  .auth-panel-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(38px, 4.5vw, 60px);
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.05;
+    margin-bottom: 22px;
+  }
+
+  .auth-panel-heading em { font-style: italic; color: var(--rust); }
+
+  .auth-panel-sub {
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(247,243,238,0.45);
+    line-height: 1.85;
+    max-width: 320px;
+    margin-bottom: 52px;
+  }
+
+  /* Mini dashboard preview */
+  .mini-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 48px;
+  }
+
+  .mini-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 13px 16px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .mini-row:hover {
+    background: rgba(196,98,45,0.1);
+    border-color: rgba(196,98,45,0.3);
+  }
+
+  .mini-row-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .mini-row-label {
+    font-size: 12px;
+    font-weight: 400;
+    color: rgba(247,243,238,0.55);
+    flex: 1;
+  }
+
+  .mini-row-badge {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+  }
+
+  /* Quote */
+  .auth-quote {
+    padding-top: 36px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .auth-quote-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 300;
+    font-style: italic;
+    color: rgba(247,243,238,0.3);
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+
+  .auth-quote-author {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(247,243,238,0.18);
+  }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .auth-wrap { grid-template-columns: 1fr; }
+    .auth-right { display: none; }
+    .auth-left {
+      padding: 64px 28px;
+      min-height: calc(100vh - 64px);
+      align-items: flex-start;
+      padding-top: 64px;
+    }
+    .auth-form-wrap { max-width: 100%; }
+  }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="auth-wrap">
+
+  <!-- ── Left: Form ── -->
+  <div class="auth-left">
+    <div class="auth-form-wrap">
+
+      <div class="auth-form-header">
+        <p class="auth-form-eyebrow">Welcome back</p>
+        <h2 class="auth-form-title">
+          Sign back <em>in.</em>
+        </h2>
+        <p class="auth-form-sub">
+          Enter your credentials below to pick up right where you left off.
+        </p>
+      </div>
+
+      <!-- ✅ ORIGINAL FORM — logic & fields unchanged -->
+      <form method="POST" class="auth-form">
+        {% csrf_token %}
+
+        <div class="auth-field">
+          <div class="auth-field-top">
+            <label for="id_username">Username</label>
+          </div>
+          <div class="auth-field-inner">
+            <input
+              type="text"
+              name="username"
+              id="id_username"
+              placeholder="Your username"
+            />
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <div class="auth-field-top">
+            <label for="id_password">Password</label>
+            <a href="#" class="auth-field-hint">Forgot password?</a>
+          </div>
+          <div class="auth-field-inner">
+            <input
+              type="password"
+              name="password"
+              id="id_password"
+              placeholder="Your password"
+            />
+            <button type="button" class="field-toggle" onclick="togglePass('id_password', this)" tabindex="-1">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5Z" stroke="currentColor" stroke-width="1.3"/>
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="auth-submit">
+          <span>Sign In</span>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M2.5 6.5h8M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+      </form>
+      <!-- ✅ END ORIGINAL FORM -->
+
+      <div class="auth-divider">
+        <div class="auth-divider-line"></div>
+        <span>or</span>
+        <div class="auth-divider-line"></div>
+      </div>
+
+      <!-- ✅ ORIGINAL link — /register unchanged -->
+      <p class="auth-footer">
+        Don't have an account? <a href="/register">Register</a>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ── Right: Dark panel ── -->
+  <div class="auth-right">
+    <div class="auth-right-inner">
+
+      <div class="auth-eyebrow">
+        <div class="auth-eyebrow-line"></div>
+        <span>Your workspace awaits</span>
+      </div>
+
+      <h2 class="auth-panel-heading">
+        Everything<br>where you<br>left <em>it.</em>
+      </h2>
+
+      <p class="auth-panel-sub">
+        Your teams, projects, and tasks are all here — exactly as you left them. Sign in and get straight back to work.
+      </p>
+
+      <!-- Mini live preview rows -->
+      <div class="mini-preview">
+        <div class="mini-row">
+          <div class="mini-row-dot" style="background:var(--rust);"></div>
+          <span class="mini-row-label">Website Redesign</span>
+          <span class="mini-row-badge" style="background:#FBF0EA;color:var(--rust);">In Progress</span>
+        </div>
+        <div class="mini-row">
+          <div class="mini-row-dot" style="background:#2E7D52;"></div>
+          <span class="mini-row-label">API Integration</span>
+          <span class="mini-row-badge" style="background:#E8F5EE;color:#2E7D52;">Done</span>
+        </div>
+        <div class="mini-row">
+          <div class="mini-row-dot" style="background:var(--muted);"></div>
+          <span class="mini-row-label">Write Release Notes</span>
+          <span class="mini-row-badge" style="background:rgba(255,255,255,0.06);color:rgba(247,243,238,0.35);">To Do</span>
+        </div>
+        <div class="mini-row">
+          <div class="mini-row-dot" style="background:var(--rust);"></div>
+          <span class="mini-row-label">Mobile App v2</span>
+          <span class="mini-row-badge" style="background:#FBF0EA;color:var(--rust);">In Progress</span>
+        </div>
+      </div>
+
+      <div class="auth-quote">
+        <div class="auth-quote-text">
+          "Focus is the art of knowing what to ignore."
+        </div>
+        <div class="auth-quote-author">— James Clear</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function togglePass(fieldId, btn) {
+    const input = document.getElementById(fieldId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.innerHTML = isHidden
+      ? `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+           <path d="M2 2l12 12M6.5 6.7A2 2 0 0 0 9.3 9.5M1 8s2.5-5 7-5c1 0 2 .2 2.8.6M15 8s-.8 1.6-2.3 2.9M6 13.4C6.6 13.8 7.3 14 8 14c4.5 0 7-5 7-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+         </svg>`
+      : `<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+           <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5Z" stroke="currentColor" stroke-width="1.3"/>
+           <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/>
+         </svg>`;
+  }
+</script>
+{% endblock %}

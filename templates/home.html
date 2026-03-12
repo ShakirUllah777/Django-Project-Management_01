@@ -1,21 +1,726 @@
 {% extends "base.html" %}
 
+{% block title %}Vantage — Project Management{% endblock %}
+
+{% block extra_css %}
+<style>
+  .page-container > div.content-wrap {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  /* ══════════════════════════════
+     HERO
+  ══════════════════════════════ */
+  .hero {
+    min-height: calc(100vh - 64px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+
+  .hero-left {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 72px 80px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-left::before {
+    content: '';
+    position: absolute;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    top: -140px; right: -140px;
+    pointer-events: none;
+  }
+
+  .hero-left::after {
+    content: '';
+    position: absolute;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    bottom: 50px; left: -70px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 30px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .hero-eyebrow-line { width: 32px; height: 1px; background: var(--rust); flex-shrink: 0; }
+
+  .hero-eyebrow span {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--rust);
+  }
+
+  .hero-heading {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(44px, 5vw, 72px);
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1.05;
+    margin-bottom: 26px;
+    animation: fadeUp 0.6s ease 0.1s both;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-heading em { font-style: italic; color: var(--rust); }
+
+  .hero-sub {
+    font-size: 14px;
+    font-weight: 300;
+    color: rgba(247,243,238,0.5);
+    line-height: 1.85;
+    max-width: 380px;
+    margin-bottom: 44px;
+    animation: fadeUp 0.6s ease 0.2s both;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-ctas {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    animation: fadeUp 0.6s ease 0.3s both;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+  }
+
+  .btn-hero-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--rust);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 17px 34px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .btn-hero-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #A8521E;
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
+  }
+
+  .btn-hero-primary:hover::before { transform: translateX(0); }
+  .btn-hero-primary:hover { transform: translateY(-2px); }
+  .btn-hero-primary span, .btn-hero-primary svg { position: relative; z-index: 1; }
+
+  .btn-hero-ghost {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(247,243,238,0.45);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(247,243,238,0.18);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .btn-hero-ghost:hover { color: var(--cream); border-color: rgba(247,243,238,0.5); }
+
+  .hero-stats {
+    display: flex;
+    gap: 36px;
+    margin-top: 52px;
+    padding-top: 36px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    animation: fadeUp 0.6s ease 0.4s both;
+    position: relative;
+    z-index: 1;
+  }
+
+  .h-stat-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 34px;
+    font-weight: 300;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .h-stat-val span { color: var(--rust); }
+  .h-stat-lbl { font-size: 10px; font-weight: 400; color: rgba(247,243,238,0.3); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* Hero right */
+  .hero-right {
+    background: var(--cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 48px;
+    position: relative;
+  }
+
+  .dashboard-mockup { width: 100%; max-width: 440px; animation: floatIn 0.8s ease 0.3s both; }
+
+  @keyframes floatIn {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .float-card {
+    position: absolute;
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: 0 8px 32px rgba(26,22,18,0.13);
+    padding: 12px 16px;
+  }
+
+  .float-1 { top: 96px; right: 16px; min-width: 136px; animation: gentleFloat 4s ease-in-out infinite; }
+  .float-2 { bottom: 96px; left: 10px; min-width: 118px; animation: gentleFloat 4s ease-in-out 1.6s infinite; }
+
+  @keyframes gentleFloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+  }
+
+  .fc-lbl { font-size: 8px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .fc-val { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300; color: var(--ink); line-height: 1; }
+  .fc-sub { font-size: 9px; font-weight: 300; color: var(--muted); margin-top: 3px; }
+
+  .mock-topbar { background: var(--ink); height: 34px; display: flex; align-items: center; padding: 0 14px; gap: 8px; margin-bottom: 10px; }
+  .mock-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .mock-brand { font-family: 'Cormorant Garamond', serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cream); margin: 0 auto; }
+
+  .mock-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; margin-bottom: 10px; }
+  .mock-stat { background: var(--card); border: 1px solid var(--line); padding: 9px 10px; }
+  .mock-stat-val { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; color: var(--ink); line-height: 1; margin-bottom: 2px; }
+  .mock-stat-lbl { font-size: 7px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+  .mock-section-ttl { font-size: 8px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--rust); margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid var(--line); }
+  .mock-tasks { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .mock-task { background: var(--card); border: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 7px 10px; }
+  .mock-ind { width: 3px; height: 20px; border-radius: 1px; flex-shrink: 0; }
+  .mock-task-ttl { font-size: 9px; color: var(--ink); flex: 1; }
+  .mock-badge { font-size: 7px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px; }
+
+  .mock-projects { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .mock-proj { background: var(--card); border: 1px solid var(--line); padding: 9px 10px; position: relative; overflow: hidden; }
+  .mock-proj-name { font-family: 'Cormorant Garamond', serif; font-size: 12px; font-weight: 400; color: var(--ink); margin-bottom: 2px; }
+  .mock-proj-team { font-size: 7px; font-weight: 300; color: var(--muted); }
+
+  /* ══════════════════════════════
+     FEATURES
+  ══════════════════════════════ */
+  .features-section { padding: 110px 56px; max-width: 1180px; margin: 0 auto; }
+
+  .sec-header { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 64px; }
+  .sec-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rust); margin-bottom: 12px; }
+  .sec-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px, 4vw, 50px); font-weight: 300; line-height: 1.1; }
+  .sec-heading em { font-style: italic; color: var(--rust); }
+  .sec-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.85; max-width: 360px; align-self: end; }
+
+  .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+
+  .feat-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 34px 30px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+  }
+
+  .feat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .feat-card:hover { transform: translateY(-4px); box-shadow: 0 14px 40px rgba(26,22,18,0.1); border-color: var(--rust); }
+  .feat-card:hover::before { transform: scaleX(1); }
+
+  .feat-icon { width: 46px; height: 46px; background: var(--cream); display: flex; align-items: center; justify-content: center; margin-bottom: 20px; transition: background 0.2s; }
+  .feat-card:hover .feat-icon { background: #FBF0EA; }
+  .feat-title { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 400; color: var(--ink); margin-bottom: 10px; line-height: 1.2; }
+  .feat-desc { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.75; }
+
+  /* ══════════════════════════════
+     HOW IT WORKS
+  ══════════════════════════════ */
+  .how-section { background: var(--ink); padding: 110px 56px; }
+  .how-inner { max-width: 1180px; margin: 0 auto; }
+  .how-header { text-align: center; margin-bottom: 72px; }
+  .how-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rust); margin-bottom: 12px; }
+  .how-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px,4vw,50px); font-weight: 300; color: var(--cream); line-height: 1.1; }
+  .how-heading em { font-style: italic; color: var(--rust); }
+
+  .steps-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; }
+
+  .step-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); padding: 30px 26px; transition: background 0.2s, border-color 0.2s; }
+  .step-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(196,98,45,0.4); }
+  .step-num { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 300; color: var(--rust); line-height: 1; margin-bottom: 18px; opacity: 0.75; }
+  .step-title { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 400; color: var(--cream); margin-bottom: 10px; }
+  .step-desc { font-size: 12px; font-weight: 300; color: rgba(247,243,238,0.38); line-height: 1.75; }
+
+  /* ══════════════════════════════
+     DASHBOARD WELCOME (auth)
+  ══════════════════════════════ */
+  .dash-hero { min-height: calc(100vh - 64px); display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+
+  .dash-left {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 72px 80px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dash-left::before {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.04);
+    top: -100px; right: -100px;
+    pointer-events: none;
+  }
+
+  .dash-welcome { font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rust); margin-bottom: 12px; animation: fadeUp 0.5s ease both; }
+
+  .dash-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(40px,5vw,64px); font-weight: 300; color: var(--cream); line-height: 1.05; margin-bottom: 22px; animation: fadeUp 0.5s ease 0.1s both; position: relative; z-index: 1; }
+  .dash-heading em { font-style: italic; color: var(--rust); }
+
+  .dash-sub { font-size: 14px; font-weight: 300; color: rgba(247,243,238,0.48); line-height: 1.85; max-width: 360px; margin-bottom: 44px; animation: fadeUp 0.5s ease 0.2s both; position: relative; z-index: 1; }
+
+  .dash-quick-links { display: flex; flex-direction: column; gap: 10px; animation: fadeUp 0.5s ease 0.3s both; position: relative; z-index: 1; max-width: 380px; }
+
+  .dash-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 16px 20px;
+    text-decoration: none;
+    color: var(--cream);
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  }
+
+  .dash-link:hover { background: rgba(196,98,45,0.12); border-color: rgba(196,98,45,0.4); transform: translateX(4px); }
+
+  .dash-link-left { display: flex; align-items: center; gap: 14px; }
+
+  .dash-link-icon { width: 36px; height: 36px; background: rgba(196,98,45,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+  .dash-link:hover .dash-link-icon { background: rgba(196,98,45,0.25); }
+
+  .dash-link-label { font-size: 12px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+  .dash-link-desc { font-size: 11px; font-weight: 300; color: rgba(247,243,238,0.38); margin-top: 1px; }
+
+  .dash-link-arrow { font-size: 16px; color: rgba(247,243,238,0.2); transition: color 0.2s, transform 0.2s; flex-shrink: 0; }
+  .dash-link:hover .dash-link-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  .dash-right { background: var(--cream); display: flex; flex-direction: column; justify-content: center; padding: 80px 56px; gap: 16px; animation: floatIn 0.7s ease 0.2s both; }
+
+  .dash-stat-card { background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); padding: 24px 28px; display: flex; align-items: center; gap: 20px; transition: transform 0.2s, border-color 0.2s; text-decoration: none; color: inherit; }
+  .dash-stat-card:hover { transform: translateX(4px); border-color: var(--rust); }
+
+  .dsc-icon { width: 48px; height: 48px; background: var(--cream); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
+  .dash-stat-card:hover .dsc-icon { background: #FBF0EA; }
+
+  .dsc-body { flex: 1; }
+  .dsc-val { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 300; color: var(--ink); line-height: 1; margin-bottom: 4px; }
+  .dsc-lbl { font-size: 11px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+
+  .dsc-arrow { font-size: 18px; color: var(--line); transition: color 0.2s, transform 0.2s; }
+  .dash-stat-card:hover .dsc-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     CTA
+  ══════════════════════════════ */
+  .cta-section { padding: 100px 56px; background: var(--cream); }
+  .cta-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 48px; }
+  .cta-eyebrow { font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rust); margin-bottom: 14px; }
+  .cta-heading { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px,4vw,52px); font-weight: 300; color: var(--ink); line-height: 1.1; }
+  .cta-heading em { font-style: italic; color: var(--rust); }
+  .cta-sub { margin-top: 14px; font-size: 14px; font-weight: 300; color: var(--muted); line-height: 1.8; max-width: 420px; }
+
+  .cta-btns { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; flex-shrink: 0; }
+
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--ink);
+    color: var(--cream);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 17px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-cta::before { content: ''; position: absolute; inset: 0; background: var(--rust); transform: translateX(-100%); transition: transform 0.35s ease; }
+  .btn-cta:hover::before { transform: translateX(0); }
+  .btn-cta:hover { transform: translateY(-2px); }
+  .btn-cta span, .btn-cta svg { position: relative; z-index: 1; }
+
+  .btn-cta-soft { font-size: 12px; font-weight: 400; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--line); padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
+  .btn-cta-soft:hover { color: var(--ink); border-color: var(--muted); }
+
+  /* ══════════════════════════════
+     SCROLL REVEAL
+  ══════════════════════════════ */
+  .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  .reveal-stagger > * { opacity: 0; transform: translateY(18px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .reveal-stagger.visible > *:nth-child(1) { opacity:1; transform:none; transition-delay:0.00s; }
+  .reveal-stagger.visible > *:nth-child(2) { opacity:1; transform:none; transition-delay:0.09s; }
+  .reveal-stagger.visible > *:nth-child(3) { opacity:1; transform:none; transition-delay:0.18s; }
+  .reveal-stagger.visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:0.27s; }
+  .reveal-stagger.visible > *:nth-child(5) { opacity:1; transform:none; transition-delay:0.36s; }
+  .reveal-stagger.visible > *:nth-child(6) { opacity:1; transform:none; transition-delay:0.45s; }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 1024px) {
+    .hero, .dash-hero { grid-template-columns: 1fr; }
+    .hero-right, .dash-right { display: none; }
+    .hero-left, .dash-left { min-height: calc(100vh - 64px); padding: 72px 36px; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .steps-grid { grid-template-columns: 1fr 1fr; }
+    .cta-inner { grid-template-columns: 1fr; }
+    .cta-btns { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+    .sec-header { grid-template-columns: 1fr; gap: 16px; }
+  }
+
+  @media (max-width: 720px) {
+    .features-section { padding: 72px 24px; }
+    .how-section { padding: 72px 24px; }
+    .cta-section { padding: 72px 24px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .dash-quick-links { max-width: 100%; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-
-<h1>Welcome to Project Management System</h1>
-
-<p>
-This system helps teams manage projects, tasks, and collaboration easily.
-</p>
 
 {% if user.is_authenticated %}
 
-<a href="/dashboard/">Go to Dashboard</a>
+<!-- ══════ AUTHENTICATED ══════ -->
+<section class="dash-hero">
+  <div class="dash-left">
+    <p class="dash-welcome">Welcome back</p>
+    <h1 class="dash-heading">Hello,<br><em>{{ user.username }}</em></h1>
+    <p class="dash-sub">Pick up right where you left off. Your teams, projects, and tasks are all waiting for you.</p>
+
+    <div class="dash-quick-links">
+      <a href="/dashboard/" class="dash-link">
+        <div class="dash-link-left">
+          <div class="dash-link-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="2" y="2" width="6" height="6" rx="0.5" stroke="#C4622D" stroke-width="1.3"/>
+              <rect x="10" y="2" width="6" height="6" rx="0.5" stroke="#C4622D" stroke-width="1.3" opacity="0.5"/>
+              <rect x="2" y="10" width="6" height="6" rx="0.5" stroke="#C4622D" stroke-width="1.3" opacity="0.5"/>
+              <rect x="10" y="10" width="6" height="6" rx="0.5" stroke="#C4622D" stroke-width="1.3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="dash-link-label">Dashboard</div>
+            <div class="dash-link-desc">Your personal overview</div>
+          </div>
+        </div>
+        <span class="dash-link-arrow">↗</span>
+      </a>
+
+      <a href="/projects/" class="dash-link">
+        <div class="dash-link-left">
+          <div class="dash-link-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <rect x="2" y="3" width="14" height="12" rx="1" stroke="#C4622D" stroke-width="1.3"/>
+              <path d="M5 2v2M13 2v2M2 7h14" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M5 10h8M5 13h5" stroke="#C4622D" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="dash-link-label">Projects</div>
+            <div class="dash-link-desc">Track active work</div>
+          </div>
+        </div>
+        <span class="dash-link-arrow">↗</span>
+      </a>
+
+      <a href="{% url 'team_list' %}" class="dash-link">
+        <div class="dash-link-left">
+          <div class="dash-link-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="6" cy="6" r="2.5" stroke="#C4622D" stroke-width="1.3"/>
+              <circle cx="12" cy="6" r="2.5" stroke="#C4622D" stroke-width="1.3" opacity="0.5"/>
+              <path d="M1 16c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round"/>
+              <path d="M12 11c1.5 0 4 .9 4 5" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="dash-link-label">Teams</div>
+            <div class="dash-link-desc">Manage members & roles</div>
+          </div>
+        </div>
+        <span class="dash-link-arrow">↗</span>
+      </a>
+
+      <a href="/tasks/" class="dash-link">
+        <div class="dash-link-left">
+          <div class="dash-link-icon">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <path d="M3 5h12M3 9h8M3 13h5" stroke="#C4622D" stroke-width="1.3" stroke-linecap="round"/>
+              <circle cx="15" cy="13" r="2.5" stroke="#C4622D" stroke-width="1.3"/>
+              <path d="M14 13l.7.7 1.3-1.4" stroke="#C4622D" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="dash-link-label">Tasks</div>
+            <div class="dash-link-desc">View & update your board</div>
+          </div>
+        </div>
+        <span class="dash-link-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="dash-right">
+    <a href="/dashboard/" class="dash-stat-card">
+      <div class="dsc-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="2" y="2" width="8" height="8" rx="0.5" stroke="#C4622D" stroke-width="1.4"/>
+          <rect x="12" y="2" width="8" height="8" rx="0.5" stroke="#C4622D" stroke-width="1.4" opacity="0.4"/>
+          <rect x="2" y="12" width="8" height="8" rx="0.5" stroke="#C4622D" stroke-width="1.4" opacity="0.4"/>
+          <rect x="12" y="12" width="8" height="8" rx="0.5" stroke="#C4622D" stroke-width="1.4"/>
+        </svg>
+      </div>
+      <div class="dsc-body">
+        <div class="dsc-val">Overview</div>
+        <div class="dsc-lbl">Go to Dashboard</div>
+      </div>
+      <span class="dsc-arrow">↗</span>
+    </a>
+
+    <a href="{% url 'team_list' %}" class="dash-stat-card">
+      <div class="dsc-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="8" cy="7" r="3" stroke="#C4622D" stroke-width="1.4"/>
+          <circle cx="15" cy="7" r="3" stroke="#C4622D" stroke-width="1.4" opacity="0.4"/>
+          <path d="M2 19c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M15 13c2 0 5 1.2 5 6" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="dsc-body">
+        <div class="dsc-val">Teams</div>
+        <div class="dsc-lbl">Manage your teams</div>
+      </div>
+      <span class="dsc-arrow">↗</span>
+    </a>
+
+    <a href="/projects/" class="dash-stat-card">
+      <div class="dsc-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="2" y="3" width="18" height="16" rx="1" stroke="#C4622D" stroke-width="1.4"/>
+          <path d="M6 2v2M16 2v2M2 9h18" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M6 13h10M6 16h6" stroke="#C4622D" stroke-width="1.2" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+      </div>
+      <div class="dsc-body">
+        <div class="dsc-val">Projects</div>
+        <div class="dsc-lbl">Track your projects</div>
+      </div>
+      <span class="dsc-arrow">↗</span>
+    </a>
+
+    <a href="/tasks/" class="dash-stat-card">
+      <div class="dsc-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M4 6h14M4 11h10M4 16h7" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="19" cy="16" r="3" stroke="#C4622D" stroke-width="1.3"/>
+          <path d="M18 16l.8.8 1.5-1.6" stroke="#C4622D" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="dsc-body">
+        <div class="dsc-val">Tasks</div>
+        <div class="dsc-lbl">Update your board</div>
+      </div>
+      <span class="dsc-arrow">↗</span>
+    </a>
+  </div>
+</section>
 
 {% else %}
 
-<a href="/login/">Login</a>
+<!-- ══════ GUEST ══════ -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span>Project Management</span>
+    </div>
+    <h1 class="hero-heading">Manage work<br>with <em>clarity</em><br>and precision.</h1>
+    <p class="hero-sub">Vantage brings your teams, projects, and tasks into one refined workspace. No noise — just the focus your team needs to deliver.</p>
+    <div class="hero-ctas">
+      <a href="/register/" class="btn-hero-primary">
+        <span>Start for Free</span>
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M2.5 6.5h8M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="/login/" class="btn-hero-ghost">Already have an account?</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="h-stat-val">3<span>+</span></div><div class="h-stat-lbl">Modules</div></div>
+      <div><div class="h-stat-val">∞</div><div class="h-stat-lbl">Tasks</div></div>
+      <div><div class="h-stat-val">1<span>×</span></div><div class="h-stat-lbl">Workspace</div></div>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="float-card float-1">
+      <div class="fc-lbl">Tasks Done</div>
+      <div class="fc-val" style="color:var(--green);">12</div>
+      <div class="fc-sub">This week ↑ 3</div>
+    </div>
+    <div class="float-card float-2">
+      <div class="fc-lbl">Active Projects</div>
+      <div class="fc-val">4</div>
+      <div class="fc-sub">Across 2 teams</div>
+    </div>
+    <div class="dashboard-mockup">
+      <div class="mock-topbar">
+        <div class="mock-dot" style="background:var(--rust);"></div>
+        <div class="mock-dot" style="background:#B5880D;opacity:0.5;"></div>
+        <div class="mock-dot" style="background:var(--green);opacity:0.5;"></div>
+        <div class="mock-brand">Vantage</div>
+      </div>
+      <div class="mock-stats">
+        <div class="mock-stat"><div class="mock-stat-val">6</div><div class="mock-stat-lbl">Teams</div></div>
+        <div class="mock-stat"><div class="mock-stat-val" style="color:var(--rust);">4</div><div class="mock-stat-lbl">Projects</div></div>
+        <div class="mock-stat"><div class="mock-stat-val">18</div><div class="mock-stat-lbl">Tasks</div></div>
+        <div class="mock-stat"><div class="mock-stat-val" style="color:var(--green);">12</div><div class="mock-stat-lbl">Done</div></div>
+      </div>
+      <div class="mock-section-ttl">Recent Tasks</div>
+      <div class="mock-tasks">
+        <div class="mock-task"><div class="mock-ind" style="background:var(--green);"></div><span class="mock-task-ttl">Design system tokens</span><span class="mock-badge" style="background:#E8F5EE;color:var(--green);">Done</span></div>
+        <div class="mock-task"><div class="mock-ind" style="background:var(--rust);"></div><span class="mock-task-ttl">API integration</span><span class="mock-badge" style="background:#FBF0EA;color:var(--rust);">Active</span></div>
+        <div class="mock-task"><div class="mock-ind" style="background:var(--muted);"></div><span class="mock-task-ttl">Write release notes</span><span class="mock-badge" style="background:#F2EFEC;color:var(--muted);">To Do</span></div>
+      </div>
+      <div class="mock-section-ttl">Projects</div>
+      <div class="mock-projects">
+        <div class="mock-proj"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--rust);"></div><div class="mock-proj-name">Website Redesign</div><div class="mock-proj-team">Design Team</div></div>
+        <div class="mock-proj"><div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);"></div><div class="mock-proj-name">Mobile App v2</div><div class="mock-proj-team">Engineering</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features-section" id="features">
+  <div class="sec-header reveal">
+    <div>
+      <p class="sec-eyebrow">What's inside</p>
+      <h2 class="sec-heading">Everything your<br>team <em>needs</em></h2>
+    </div>
+    <p class="sec-desc">From spinning up a team to shipping tasks — Vantage covers the full project lifecycle in one focused workspace.</p>
+  </div>
+  <div class="features-grid reveal-stagger">
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.5" stroke="#C4622D" stroke-width="1.4"/><path d="M4 19c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/></svg></div><div class="feat-title">Team Management</div><div class="feat-desc">Create teams, invite members, and assign roles. Everyone knows where they belong and what they own.</div></div>
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="3" width="18" height="16" rx="1.5" stroke="#C4622D" stroke-width="1.4"/><path d="M7 2v2M15 2v2M2 9h18" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/><path d="M6 13h10M6 16h6" stroke="#C4622D" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/></svg></div><div class="feat-title">Project Tracking</div><div class="feat-desc">Organise work into projects with deadlines and team assignments. Watch progress from creation to completion.</div></div>
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 6h14M4 11h10M4 16h7" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/><circle cx="18" cy="16" r="3" stroke="#C4622D" stroke-width="1.3"/><path d="M17 16l.8.8 1.4-1.6" stroke="#C4622D" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="feat-title">Kanban Task Board</div><div class="feat-desc">A clean board sorted by status. Move tasks from To Do → In Progress → Done with a single update.</div></div>
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 3v4M11 15v4M3 11h4M15 11h4" stroke="#C4622D" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="11" r="4" stroke="#C4622D" stroke-width="1.4"/></svg></div><div class="feat-title">Priority Levels</div><div class="feat-desc">Flag tasks as Low, Medium, or High priority. Your team always knows what to tackle first.</div></div>
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="2" width="8" height="8" rx="1" stroke="#C4622D" stroke-width="1.4"/><rect x="12" y="2" width="8" height="8" rx="1" stroke="#C4622D" stroke-width="1.4" opacity="0.5"/><rect x="2" y="12" width="8" height="8" rx="1" stroke="#C4622D" stroke-width="1.4" opacity="0.5"/><rect x="12" y="12" width="8" height="8" rx="1" stroke="#C4622D" stroke-width="1.4"/></svg></div><div class="feat-title">Live Dashboard</div><div class="feat-desc">See all your teams, projects, and tasks at a glance. Your personal command centre, always current.</div></div>
+    <div class="feat-card"><div class="feat-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2L13.5 8.5H20L14.5 12.5L16.5 19L11 15L5.5 19L7.5 12.5L2 8.5H8.5L11 2Z" stroke="#C4622D" stroke-width="1.4" stroke-linejoin="round"/></svg></div><div class="feat-title">Role-Based Access</div><div class="feat-desc">Assign Developer, Designer, Manager roles to members. Structure your workspace with clarity.</div></div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how-section" id="how">
+  <div class="how-inner">
+    <div class="how-header reveal">
+      <p class="how-eyebrow">Simple by design</p>
+      <h2 class="how-heading">Up and running in <em>four steps</em></h2>
+    </div>
+    <div class="steps-grid reveal-stagger">
+      <div class="step-card"><div class="step-num">01</div><div class="step-title">Create an Account</div><div class="step-desc">Register in seconds. No credit card, no noise — just your username and you're in.</div></div>
+      <div class="step-card"><div class="step-num">02</div><div class="step-title">Build your Team</div><div class="step-desc">Create a team, add members, and assign roles. Your workspace takes shape immediately.</div></div>
+      <div class="step-card"><div class="step-num">03</div><div class="step-title">Launch a Project</div><div class="step-desc">Give the project a name, set a deadline, assign it to your team, and you're ready.</div></div>
+      <div class="step-card"><div class="step-num">04</div><div class="step-title">Track Tasks Daily</div><div class="step-desc">Create tasks, assign them, set priorities, and update statuses as work progresses.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <div>
+      <p class="cta-eyebrow">Ready to begin?</p>
+      <h2 class="cta-heading">Ship better work,<br><em>together.</em></h2>
+      <p class="cta-sub">Join Vantage and bring your team's work into one clear, focused place — from first task to final delivery.</p>
+    </div>
+    <div class="cta-btns">
+      <a href="/register/" class="btn-cta">
+        <span>Create Free Account</span>
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M2.5 6.5h8M8 3.5l3 3-3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="/login/" class="btn-cta-soft">Already have an account? Sign in</a>
+    </div>
+  </div>
+</section>
 
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

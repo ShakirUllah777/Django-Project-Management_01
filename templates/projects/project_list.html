@@ -1,39 +1,662 @@
 {% extends "base.html" %}
 
+{% block title %}Projects — Vantage{% endblock %}
+
+{% block extra_css %}
+<style>
+
+  /* ══════════════════════════════
+     TOOLBAR
+  ══════════════════════════════ */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.5s ease 0.1s both;
+  }
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Search */
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 10px 16px 10px 40px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--ink);
+    outline: none;
+    width: 240px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .search-input::placeholder { color: #C5BAB2; }
+  .search-input:focus { border-color: var(--rust); box-shadow: 0 0 0 3px rgba(196,98,45,0.08); }
+
+  /* Filter pills */
+  .filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .filter-pill {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .filter-pill:hover { border-color: var(--rust); color: var(--rust); }
+  .filter-pill.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+
+  .view-btn {
+    width: 38px; height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .view-btn:hover { color: var(--rust); }
+  .view-btn.active { background: var(--ink); color: var(--cream); }
+  .view-btn + .view-btn { border-left: 1px solid var(--line); }
+
+  /* ══════════════════════════════
+     GRID VIEW
+  ══════════════════════════════ */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .project-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .project-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rust);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s ease;
+  }
+
+  .project-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 40px rgba(26,22,18,0.1);
+    border-color: var(--rust);
+  }
+
+  .project-card:hover::before { transform: scaleX(1); }
+
+  .project-card-body { padding: 26px 26px 20px; flex: 1; }
+
+  .project-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .project-initial {
+    width: 44px; height: 44px;
+    background: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--cream);
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .project-card:hover .project-initial { background: var(--rust); }
+
+  .project-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.2;
+    flex: 1;
+    margin-top: 2px;
+  }
+
+  .project-desc {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 18px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .project-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+  }
+
+  .project-meta-row svg { flex-shrink: 0; color: var(--rust); opacity: 0.7; }
+
+  .project-card-footer {
+    padding: 14px 26px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .project-arrow {
+    font-size: 14px;
+    color: var(--line);
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .project-card:hover .project-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     LIST VIEW
+  ══════════════════════════════ */
+  .projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  .projects-list.hidden,
+  .projects-grid.hidden { display: none; }
+
+  /* Table header */
+  .list-header {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr auto;
+    gap: 16px;
+    padding: 10px 22px;
+    background: transparent;
+  }
+
+  .list-header span {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .list-row {
+    background: var(--card);
+    border: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 22px;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.18s, border-color 0.18s, background 0.18s;
+  }
+
+  .list-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--rust);
+    transform: scaleY(0);
+    transition: transform 0.25s ease;
+  }
+
+  .list-row:hover {
+    transform: translateX(4px);
+    border-color: var(--rust);
+    background: #FDFAF7;
+  }
+
+  .list-row:hover::before { transform: scaleY(1); }
+
+  .list-row-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .list-row-team {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .list-row-deadline {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .list-row-arrow {
+    font-size: 14px;
+    color: var(--line);
+    transition: color 0.2s, transform 0.2s;
+    justify-self: end;
+  }
+
+  .list-row:hover .list-row-arrow { color: var(--rust); transform: translate(3px,-3px); }
+
+  /* ══════════════════════════════
+     STATUS PILLS
+  ══════════════════════════════ */
+  .status-pill {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+
+  .status-active     { background: #E8F5EE; color: #2E7D52; }
+  .status-in_progress { background: #FBF0EA; color: var(--rust); }
+  .status-completed  { background: #F2EFEC; color: var(--muted); }
+  .status-planning   { background: #EAF0FB; color: #1A5C8A; }
+  .status-on_hold    { background: #FDE8E8; color: #C0392B; }
+
+  /* ══════════════════════════════
+     EMPTY STATE
+  ══════════════════════════════ */
+  .projects-empty {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    padding: 80px 40px;
+    text-align: center;
+  }
+
+  .projects-empty-icon { font-size: 36px; opacity: 0.15; margin-bottom: 18px; }
+
+  .projects-empty h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+
+  .projects-empty p {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.7;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ══════════════════════════════
+     NO RESULTS (search)
+  ══════════════════════════════ */
+  .no-results {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    padding: 48px 32px;
+    text-align: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--muted);
+  }
+
+  /* ══════════════════════════════
+     RESPONSIVE
+  ══════════════════════════════ */
+  @media (max-width: 900px) {
+    .projects-grid { grid-template-columns: 1fr 1fr; }
+    .list-header { display: none; }
+    .list-row { grid-template-columns: 1fr auto; grid-template-rows: auto auto auto; gap: 6px; }
+    .list-row-team, .list-row-deadline { grid-column: 1; }
+    .list-row-status { grid-column: 1; }
+    .list-row-arrow { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+  }
+
+  @media (max-width: 600px) {
+    .projects-grid { grid-template-columns: 1fr; }
+    .search-input { width: 180px; }
+    .toolbar { gap: 10px; }
+  }
+
+</style>
+{% endblock %}
+
 {% block content %}
 
-<h1>My Projects</h1>
+  <!-- ══════════ PAGE HEADER ══════════ -->
+  <div class="page-header anim-1">
+    <div>
+      <p class="eyebrow">Your work</p>
+      <h1 class="page-title">My <em>Projects</em></h1>
+    </div>
+  </div>
 
-<table border="1" cellpadding="10">
+  <!-- ══════════ TOOLBAR ══════════ -->
+  <div class="toolbar">
+    <div class="toolbar-left">
 
-<tr>
-<th>Project Name</th>
-<th>Description</th>
-<th>Team</th>
-<th>Status</th>
-<th>Deadline</th>
-</tr>
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M10 10l2.5 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          id="projectSearch"
+          placeholder="Search projects..."
+          oninput="filterProjects()"
+        />
+      </div>
 
-{% for project in projects %}
+      <!-- Filter pills -->
+      <div class="filter-pills">
+        <button class="filter-pill active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-pill" onclick="setFilter('active', this)">Active</button>
+        <button class="filter-pill" onclick="setFilter('in_progress', this)">In Progress</button>
+        <button class="filter-pill" onclick="setFilter('completed', this)">Completed</button>
+      </div>
 
-<tr>
+    </div>
 
-<td>{{ project.name }}</td>
-<td>{{ project.description }}</td>
-<td>{{ project.team.name }}</td>
-<td>{{ project.status }}</td>
-<td>{{ project.deadline }}</td>
+    <!-- View toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" id="gridBtn" onclick="setView('grid')" title="Grid view">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="1" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="8" y="1" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="1" y="8" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="8" y="8" width="5" height="5" rx="0.5" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+      </button>
+      <button class="view-btn" id="listBtn" onclick="setView('list')" title="List view">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-</tr>
+  <!-- ══════════ PROJECTS GRID ══════════ -->
+  <div class="projects-grid" id="projectsGrid">
 
-{% empty %}
+    {% for project in projects %}
+    <div
+      class="project-card"
+      data-name="{{ project.name|lower }}"
+      data-team="{{ project.team.name|lower }}"
+      data-status="{{ project.status|lower }}"
+    >
+      <div class="project-card-body">
+        <div class="project-card-top">
+          <!-- ✅ project.name unchanged -->
+          <div class="project-initial">{{ project.name|first|upper }}</div>
+          <div class="project-name">{{ project.name }}</div>
+        </div>
 
-<tr>
-<td colspan="5">No Projects Assigned</td>
-</tr>
+        <!-- ✅ project.description unchanged -->
+        {% if project.description %}
+        <p class="project-desc">{{ project.description }}</p>
+        {% endif %}
 
-{% endfor %}
+        <div class="project-meta">
 
-</table>
+          <!-- ✅ project.team.name unchanged -->
+          {% if project.team.name %}
+          <div class="project-meta-row">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <circle cx="4.5" cy="4" r="2" stroke="currentColor" stroke-width="1.2"/>
+              <circle cx="8.5" cy="4" r="2" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+              <path d="M1 11c0-1.933 1.567-3.5 3.5-3.5S8 9.067 8 11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+              <path d="M8.5 7.5c1 0 3 .6 3 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+            {{ project.team.name }}
+          </div>
+          {% endif %}
 
+          <!-- ✅ project.deadline unchanged -->
+          {% if project.deadline %}
+          <div class="project-meta-row">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <rect x="1" y="2" width="11" height="10" rx="1" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M4 1v2M9 1v2M1 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            {{ project.deadline }}
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <div class="project-card-footer">
+        <!-- ✅ project.status unchanged -->
+        <span class="status-pill status-{{ project.status|lower|cut:' ' }}">
+          {{ project.status }}
+        </span>
+        <span class="project-arrow">↗</span>
+      </div>
+    </div>
+
+    {% empty %}
+    <!-- empty handled below -->
+    {% endfor %}
+
+  </div>
+
+  <!-- ══════════ PROJECTS LIST ══════════ -->
+  <div class="projects-list hidden" id="projectsList">
+
+    <div class="list-header">
+      <span>Project</span>
+      <span>Team</span>
+      <span>Status</span>
+      <span>Deadline</span>
+      <span></span>
+    </div>
+
+    {% for project in projects %}
+    <div
+      class="list-row"
+      data-name="{{ project.name|lower }}"
+      data-team="{{ project.team.name|lower }}"
+      data-status="{{ project.status|lower }}"
+    >
+      <!-- ✅ project.name unchanged -->
+      <div class="list-row-name">{{ project.name }}</div>
+
+      <!-- ✅ project.team.name unchanged -->
+      <div class="list-row-team">
+        {% if project.team.name %}{{ project.team.name }}{% else %}—{% endif %}
+      </div>
+
+      <!-- ✅ project.status unchanged -->
+      <div class="list-row-status">
+        <span class="status-pill status-{{ project.status|lower|cut:' ' }}">
+          {{ project.status }}
+        </span>
+      </div>
+
+      <!-- ✅ project.deadline unchanged -->
+      <div class="list-row-deadline">
+        {% if project.deadline %}{{ project.deadline }}{% else %}—{% endif %}
+      </div>
+
+      <span class="list-row-arrow">↗</span>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  <!-- ══════════ NO SEARCH RESULTS ══════════ -->
+  <div class="no-results" id="noResults">
+    No projects match your search.
+  </div>
+
+  <!-- ══════════ EMPTY STATE ══════════ -->
+  {% if not projects %}
+  <div class="projects-empty">
+    <div class="projects-empty-icon">📋</div>
+    <h3>No Projects Assigned</h3>
+    <p>You haven't been assigned to any projects yet. Create one to get started.</p>
+    <a href="/projects/create/" class="btn btn-primary">
+      <span>Create a Project</span>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M6.5 2v9M2 6.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </a>
+  </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+  // ── View toggle ──
+  function setView(view) {
+    const grid    = document.getElementById('projectsGrid');
+    const list    = document.getElementById('projectsList');
+    const gridBtn = document.getElementById('gridBtn');
+    const listBtn = document.getElementById('listBtn');
+
+    if (view === 'grid') {
+      grid.classList.remove('hidden');
+      list.classList.add('hidden');
+      gridBtn.classList.add('active');
+      listBtn.classList.remove('active');
+    } else {
+      list.classList.remove('hidden');
+      grid.classList.add('hidden');
+      listBtn.classList.add('active');
+      gridBtn.classList.remove('active');
+    }
+    filterProjects(); // re-apply current filter
+  }
+
+  // ── Filter pills ──
+  let currentFilter = 'all';
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    filterProjects();
+  }
+
+  // ── Search + filter ──
+  function filterProjects() {
+    const query   = document.getElementById('projectSearch').value.toLowerCase().trim();
+    const gridCards = document.querySelectorAll('#projectsGrid .project-card');
+    const listRows  = document.querySelectorAll('#projectsList .list-row');
+    let visible = 0;
+
+    function matchesCard(el) {
+      const name   = el.dataset.name   || '';
+      const team   = el.dataset.team   || '';
+      const status = el.dataset.status || '';
+      const matchesSearch = name.includes(query) || team.includes(query);
+      const matchesFilter = currentFilter === 'all' || status.includes(currentFilter);
+      return matchesSearch && matchesFilter;
+    }
+
+    gridCards.forEach(el => {
+      const show = matchesCard(el);
+      el.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    listRows.forEach(el => {
+      el.style.display = matchesCard(el) ? '' : 'none';
+    });
+
+    document.getElementById('noResults').style.display =
+      visible === 0 && query ? 'block' : 'none';
+  }
+
+</script>
 {% endblock %}
