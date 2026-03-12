@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Project Management System</title>
+
+    <style>
+
+        body{
+            font-family: Arial;
+            margin:0;
+            padding:0;
+        }
+
+        nav{
+            background:#2c3e50;
+            padding:15px;
+        }
+
+        nav a{
+            color:white;
+            margin-right:20px;
+            text-decoration:none;
+            font-weight:bold;
+        }
+
+        footer{
+            background:#2c3e50;
+            color:white;
+            text-align:center;
+            padding:15px;
+            margin-top:40px;
+        }
+
+        .container{
+            width:80%;
+            margin:auto;
+            padding:20px;
+        }
+
+        .card{
+            border:1px solid #ddd;
+            padding:20px;
+            margin:10px;
+            display:inline-block;
+            width:200px;
+            text-align:center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<nav>
+
+<a href="/">Home</a>
+
+{% if user.is_authenticated %}
+
+<a href="/dashboard/">Dashboard</a>
+<a href="/projects/">Projects</a>
+<a href="{% url 'team_list' %}">Teams</a>
+<a href="/tasks/">Tasks</a>
+<a href="/logout/">Logout</a>
+
+{% else %}
+
+<a href="/login/">Login</a>
+<a href="/register/">Register</a>
+
+{% endif %}
+
+</nav>
+
+
+<div class="container">
+
+{% block content %}
+
+{% endblock %}
+
+</div>
+
+
+<footer>
+
+<p>Project Management System © 2026</p>
+
+</footer>
+
+</body>
+</html>

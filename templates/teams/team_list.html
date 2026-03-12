@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>My Teams</h1>
+
+<ul>
+
+{% for team_member in teams %}
+
+<li>
+
+<a href="/teams/{{ team_member.team.id }}/">
+
+{{ team_member.team.name }} - Role: {{ team_member.role }}
+
+</a>
+
+</li>
+
+{% empty %}
+
+<li>No teams assigned</li>
+
+{% endfor %}
+
+</ul>
+
+{% endblock %}

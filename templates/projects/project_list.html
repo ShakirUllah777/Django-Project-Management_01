@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>My Projects</h1>
+
+<table border="1" cellpadding="10">
+
+<tr>
+<th>Project Name</th>
+<th>Description</th>
+<th>Team</th>
+<th>Status</th>
+<th>Deadline</th>
+</tr>
+
+{% for project in projects %}
+
+<tr>
+
+<td>{{ project.name }}</td>
+<td>{{ project.description }}</td>
+<td>{{ project.team.name }}</td>
+<td>{{ project.status }}</td>
+<td>{{ project.deadline }}</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="5">No Projects Assigned</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}

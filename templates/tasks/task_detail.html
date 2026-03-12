@@ -1,0 +1,24 @@
+<h2>{{ task.title }}</h2>
+
+<p>{{ task.description }}</p>
+
+<p>Project: {{ task.project.name }}</p>
+
+<p>Due: {{ task.due_date }}</p>
+
+
+<form method="POST">
+
+{% csrf_token %}
+
+<select name="status">
+
+<option value="todo">Todo</option>
+<option value="progress">In Progress</option>
+<option value="completed">Completed</option>
+
+</select>
+
+<button type="submit">Update Status</button>
+
+</form>

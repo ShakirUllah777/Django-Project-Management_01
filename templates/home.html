@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Welcome to Project Management System</h1>
+
+<p>
+This system helps teams manage projects, tasks, and collaboration easily.
+</p>
+
+{% if user.is_authenticated %}
+
+<a href="/dashboard/">Go to Dashboard</a>
+
+{% else %}
+
+<a href="/login/">Login</a>
+
+{% endif %}
+
+{% endblock %}

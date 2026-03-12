@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Team Members</h1>
+
+<ul>
+
+{% for member in members %}
+
+<li>
+
+{{ member.user.username }} - {{ member.role }}
+
+</li>
+
+{% empty %}
+
+<li>No members found.</li>
+
+{% endfor %}
+
+</ul>
+
+{% endblock %}

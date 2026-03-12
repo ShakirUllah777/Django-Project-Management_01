@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<div class="card">
+<h3>Total Teams</h3>
+<p>{{ teams.count }}</p>
+</div>
+
+<div class="card">
+<h3>Total Projects</h3>
+<p>{{ projects.count }}</p>
+</div>
+
+<div class="card">
+<h3>Total Tasks</h3>
+<p>{{ tasks.count }}</p>
+</div>
+
+{% endblock %}
